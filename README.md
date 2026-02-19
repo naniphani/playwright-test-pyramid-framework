@@ -10,6 +10,15 @@ This project demonstrates a scalable Playwright automation framework implementin
 - Robust network-based stabilization
 - Environment configuration support
 
+  ## Design Decisions
+
+- Used API tests as a foundation (Pyramid base) for cart state validation
+- Used Hybrid tests to validate UI-triggered backend behavior
+- Used UI tests only for visual and interaction validation
+- Stabilized registration using network response rather than redirect assumptions
+- Implemented safe pagination to avoid flaky UI transitions
+
+
 ## Tech Stack
 
 - Playwright (TypeScript)
