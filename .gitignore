@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+
+# VS Code
+.vscode/
+
+# Node
+node_modules/
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Misc
+*.log
+error.txt
+
+# Playwright storage state
+storage/
+*.storageState.json
+
+
