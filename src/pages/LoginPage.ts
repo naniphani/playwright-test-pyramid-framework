@@ -12,7 +12,7 @@ export class LoginPage {
     constructor(page: Page) {
         this.page = page;
 
-        // Toolshop uses data-test a lot; these match your existing code
+        // Login Locators on the sign page
         this.email = page.locator('[data-test="email"]');
         this.password = page.locator('[data-test="password"]');
         this.submit = page.locator('[data-test="login-submit"]');
