@@ -2,26 +2,27 @@
 import { test, expect } from "@playwright/test";
 import { RegisterPage } from "../../../src/pages/RegisterPage.js";
 import { loginCustomer } from "../../api/_helpers/authApi.js";
-import { faker } from '@faker-js/faker';
 import * as fs from 'fs';
 import * as path from 'path';
 
-function uniqueEmail(firstName: string, lastName: string) {
-    const ts = Date.now();
-    const rnd = Math.random().toString(16).slice(2);
-    // Use name parts to make emails easier to recognize in test data
-    return `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${ts}-${rnd}@example.test`;
+function uniqueEmailFromParts(firstName: string, lastName: string, suffix: string) {
+    const safeFirst = firstName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'fn';
+    const safeLast = lastName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'ln';
+    return `${safeFirst}.${safeLast}.${suffix}@example.test`;
 }
 
-function dobForAge(age: number) {
+function dobForAgeFromParts(age: number) {
     const now = new Date();
     const year = now.getFullYear() - age;
-    // keep day between 1 and 28 to avoid month-length issues
-    const month = faker.datatype.number({ min: 1, max: 12 });
-    const day = faker.datatype.number({ min: 1, max: 28 });
+    const month = Math.floor(Math.random() * 12) + 1;
+    const day = Math.floor(Math.random() * 28) + 1;
     const mm = String(month).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
     return `${year}-${mm}-${dd}`;
+}
+
+function shortRandom(len = 4) {
+    return Math.random().toString(36).slice(2, 2 + len);
 }
 
 // Write a local-only fixture containing the registered user's login info.
@@ -43,17 +44,43 @@ function writeLocalFixture(email: string, password: string) {
 test("Register (UI) -> Verify login works (API) [Test Pyramid: middle layer]", async ({ page }) => {
     const apiBaseURL = process.env.API_BASE_URL || "http://localhost:8091";
 
+    // Try to load faker dynamically. If not available, fall back to simple generators.
+    let fakerLib: any = null;
+    try {
+        const mod = await import('@faker-js/faker');
+        fakerLib = mod.faker ?? mod;
+    } catch (err) {
+        if (!process.env.CI) console.warn('@faker-js/faker not available, using simple fallback generators');
+    }
+
     // Generate realistic but unique test data
-    const firstName = faker.name.firstName();
-    const lastName = faker.name.lastName();
-    const email = uniqueEmail(firstName, lastName);
-    const password = "ValidPass@123";
+    const firstName = fakerLib ? fakerLib.person.firstName() : `FN${Math.floor(Math.random() * 10000)}`;
+    const lastName = fakerLib ? fakerLib.person.lastName() : `LN${Math.floor(Math.random() * 10000)}`;
+
+    // Short unique suffix for email and password
+    const suffix = shortRandom(4);
+
+    const email = fakerLib
+        ? // faker.internet.email still available, but keep consistent safe format
+          (fakerLib.internet?.email ? fakerLib.internet.email(firstName, lastName, 'example.test') : uniqueEmailFromParts(firstName, lastName, suffix))
+        : uniqueEmailFromParts(firstName, lastName, suffix);
+
+    // Unique password per run (kept reasonably short)
+    const password = fakerLib ? `P@${fakerLib.string.alphanumeric(8)}` : `ValidPass@${shortRandom(6)}`;
 
     // Age between 17 and 75
-    const age = faker.datatype.number({ min: 17, max: 75 });
-    const dob = dobForAge(age);
+    const age = fakerLib ? fakerLib.number.int({ min: 17, max: 75 }) : Math.floor(Math.random() * (75 - 17 + 1)) + 17;
+    const dob = fakerLib
+        ? (() => {
+              const now = new Date();
+              const year = now.getFullYear() - age;
+              const month = fakerLib.number.int({ min: 1, max: 12 });
+              const day = fakerLib.number.int({ min: 1, max: 28 });
+              return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          })()
+        : dobForAgeFromParts(age);
 
-    const phone = faker.phone.number('##########');
+    const phone = fakerLib ? fakerLib.phone.number() : String(1000000000 + Math.floor(Math.random() * 899999999));
 
     const register = new RegisterPage(page);
     await register.open();
@@ -66,11 +93,10 @@ test("Register (UI) -> Verify login works (API) [Test Pyramid: middle layer]", a
         email,
         password,
         address: {
-            street: faker.address.streetAddress(),
-            postalCode: faker.address.zipCode(),
-            city: faker.address.city(),
-            state: faker.address.state(),
-            // Keep a stable country label matching the demo app's option label
+            street: fakerLib ? (fakerLib.location?.streetAddress ? fakerLib.location.streetAddress() : fakerLib.address?.streetAddress?.()) : `Test Street ${Math.floor(Math.random() * 1000)}`,
+            postalCode: fakerLib ? (fakerLib.location?.zipCode ? fakerLib.location.zipCode() : fakerLib.address?.zipCode?.()) : `12345`,
+            city: fakerLib ? (fakerLib.location?.city ? fakerLib.location.city() : fakerLib.address?.city?.()) : `City${Math.floor(Math.random() * 1000)}`,
+            state: fakerLib ? (fakerLib.location?.state ? fakerLib.location.state() : fakerLib.address?.state?.()) : `State${Math.floor(Math.random() * 100)}`,
             countryLabel: "United States of America (the)",
         },
     });
