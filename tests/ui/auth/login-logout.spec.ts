@@ -3,6 +3,10 @@ import { LoginPage } from "../../../src/pages/LoginPage.js";
 import { Header } from "../../../src/components/Header.js";
 
 async function skipIfCloudflare(page: Page) {
+    // Avoid cloudflare checks for local runs
+    const base = process.env.BASE_URL || '';
+    if (/localhost|127\.0\.0\.1/.test(base)) return;
+
     const hasTurnstileFrame = await page
         .locator('iframe[src*="challenges.cloudflare.com"]')
         .first()

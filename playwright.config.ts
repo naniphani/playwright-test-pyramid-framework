@@ -23,7 +23,10 @@ export default defineConfig({
     expect: { timeout: 7_000 },
 
     outputDir: "test-results",
-    reporter: [["html", { open: "never" }], ["list"]],
+    reporter: [["html", { open: "never" }], ["list"], ["junit", { outputFile: "test-results/results.xml" }]],
+
+    // Global setup to create storageState for authenticated runs
+    globalSetup: './scripts/global-setup.ts',
 
     // Default "use" applies to all projects unless overridden
     use: {
