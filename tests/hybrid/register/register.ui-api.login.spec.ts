@@ -3,6 +3,8 @@ import { test, expect } from "@playwright/test";
 import { RegisterPage } from "../../../src/pages/RegisterPage.js";
 import { loginCustomer } from "../../api/_helpers/authApi.js";
 import { faker } from '@faker-js/faker';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function uniqueEmail(firstName: string, lastName: string) {
     const ts = Date.now();
@@ -20,6 +22,22 @@ function dobForAge(age: number) {
     const mm = String(month).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
     return `${year}-${mm}-${dd}`;
+}
+
+// Write a local-only fixture containing the registered user's login info.
+function writeLocalFixture(email: string, password: string) {
+    try {
+        const dir = path.resolve(process.cwd(), 'storage');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const file = path.join(dir, 'registered-user.json');
+        const payload = { email, password };
+        fs.writeFileSync(file, JSON.stringify(payload, null, 2), { encoding: 'utf8' });
+        // Do not log secrets in CI; only helpful locally
+        if (!process.env.CI) console.log('Wrote local fixture to', file);
+    } catch (err) {
+        // Non-fatal: writing fixture is convenience only
+        console.warn('Could not write local fixture:', err);
+    }
 }
 
 test("Register (UI) -> Verify login works (API) [Test Pyramid: middle layer]", async ({ page }) => {
@@ -70,4 +88,7 @@ test("Register (UI) -> Verify login works (API) [Test Pyramid: middle layer]", a
     // Now verify login works via API
     const token = await loginCustomer(apiBaseURL, email, password);
     expect(token.length).toBeGreaterThan(10);
+
+    // Create a local fixture with the login info for convenience. Stored under `storage/` which is gitignored.
+    writeLocalFixture(email, password);
 });
