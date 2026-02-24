@@ -1,4 +1,5 @@
 import { APIRequestContext } from "@playwright/test";
+import { faker } from "@faker-js/faker";
 
 export const REGISTER_ENDPOINT = "/users/register";
 
@@ -20,26 +21,32 @@ export type RegisterPayload = {
 
 export function uniqueEmail(prefix = "qa"): string {
     const ts = Date.now();
-    const rnd = Math.random().toString(16).slice(2);
+    const rnd = faker.string.alphanumeric(6).toLowerCase();
     return `${prefix}+${ts}-${rnd}@example.test`;
 }
 
 export function baseRegisterPayload(
     overrides: Partial<RegisterPayload> = {}
 ): RegisterPayload {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const year = new Date().getFullYear() - faker.number.int({ min: 18, max: 60 });
+    const month = String(faker.number.int({ min: 1, max: 12 })).padStart(2, "0");
+    const day = String(faker.number.int({ min: 1, max: 28 })).padStart(2, "0");
+
     return {
-        first_name: "John",
-        last_name: "Doe",
+        first_name: firstName,
+        last_name: lastName,
         address: {
-            street: "Street 1",
-            city: "City",
-            state: "State",
-            country: "Country",
-            postal_code: "1234AA",
+            street: faker.location.streetAddress(),
+            city: faker.location.city(),
+            state: faker.location.state(),
+            country: faker.location.country(),
+            postal_code: faker.location.zipCode(),
         },
-        phone: "0987654321",
-        dob: "1970-01-01",
-        password: "SuperSecure@123",
+        phone: faker.phone.number(),
+        dob: `${year}-${month}-${day}`,
+        password: `P@${faker.string.alphanumeric(10)}`,
         email: uniqueEmail(),
         ...overrides,
     };

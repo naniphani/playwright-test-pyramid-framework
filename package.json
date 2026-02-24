@@ -6,7 +6,6 @@
   "license": "ISC",
   "type": "module",
   "private": true,
-
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --project=ui",
@@ -15,14 +14,14 @@
     "test:headed": "playwright test --headed",
     "report": "playwright show-report"
   },
-
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@playwright/test": "^1.58.1",
-    "playwright": "^1.58.1",
-    "typescript": "^5.9.3",
-    "ts-node": "^10.9.2",
     "@types/node": "^25.2.0",
     "dotenv": "^17.2.3",
-    "eslint": "^9.39.1"
+    "eslint": "^9.39.1",
+    "playwright": "^1.58.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
