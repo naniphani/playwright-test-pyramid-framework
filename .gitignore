@@ -1,28 +1,42 @@
-# Visual Studio
-.vs/
-
-# VS Code
-.vscode/
-
+# -------------------------
 # Node
+# -------------------------
 node_modules/
 
-# Playwright output
+# -------------------------
+# Playwright outputs
+# -------------------------
 test-results/
 playwright-report/
 blob-report/
 
-# Env files
+# -------------------------
+# Environment files
+# -------------------------
 .env
 .env.*
 !.env.example
 
-# Misc
+# -------------------------
+# Logs
+# -------------------------
 *.log
 error.txt
 
-# Playwright storage state
+# -------------------------
+# Playwright auth/state
+# -------------------------
 storage/
 *.storageState.json
 
+# -------------------------
+# Coverage / build artifacts
+# -------------------------
+coverage/
+dist/
 
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+Thumbs.db

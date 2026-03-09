@@ -13,6 +13,7 @@ export class NavigationSection {
     readonly rentalsLink: Locator;
 
     readonly cartQuantityBadge: Locator;
+    readonly favoritesLink: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -26,6 +27,7 @@ export class NavigationSection {
         this.rentalsLink = page.locator('[data-test="nav-rentals"]');
 
         this.cartQuantityBadge = page.locator('[data-test="cart-quantity"]');
+        this.favoritesLink = page.locator('[data-test="nav-favorites"]');
     }
 
     async openCategories() {
@@ -67,4 +69,11 @@ export class NavigationSection {
     async expectCartQuantity(expected: number) {
         await expect(this.cartQuantityBadge).toHaveText(String(expected));
     }
+
+    async goToFavorites() {
+        await expect(this.favoritesLink).toBeVisible();
+        await this.favoritesLink.click();
+        await expect(this.page).toHaveURL(/\/accountfavorites/i);
+    }
+
 }
