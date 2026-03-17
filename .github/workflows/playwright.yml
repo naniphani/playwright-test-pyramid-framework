@@ -16,13 +16,15 @@ on:
 
 jobs:
   playwright-tests:
+    name: Playwright Enterprise Regression
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -37,9 +39,36 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test
 
-      - name: Upload Playwright report
+      - name: Publish execution summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Playwright Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Workflow: $GITHUB_WORKFLOW" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch/Ref: $GITHUB_REF" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
+          echo "- Run Number: $GITHUB_RUN_NUMBER" >> $GITHUB_STEP_SUMMARY
+          echo "- Actor: $GITHUB_ACTOR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- HTML report" >> $GITHUB_STEP_SUMMARY
+          echo "- JSON results" >> $GITHUB_STEP_SUMMARY
+          echo "- JUnit XML" >> $GITHUB_STEP_SUMMARY
+          echo "- Failure evidence (trace / screenshot / video when applicable)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-html-report
           path: playwright-report/
+          retention-days: 30
+
+      - name: Upload raw test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-raw-results
+          path: test-results/
+          retention-days: 30

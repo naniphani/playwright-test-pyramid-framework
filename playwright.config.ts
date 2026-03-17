@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 import * as dotenv from "dotenv";
 import { ENVIRONMENTS, resolveEnvName } from "./config/environments.js";
 import { GLOBAL } from "./config/global-constants.js";
@@ -7,99 +7,158 @@ dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
 const envName = resolveEnvName(process.env.ENV);
-const isCI = !!process.env.CI;
 
-const uiBaseURL =
-  process.env.BASE_URL || ENVIRONMENTS[envName].baseURL;
+// UI base URL
+const uiBaseURL = process.env.BASE_URL || ENVIRONMENTS[envName].baseURL;
 
-const apiBaseURL =
-  process.env.API_BASE_URL || ENVIRONMENTS[envName].apiBaseURL;
+// API base URL
+const apiBaseURL = process.env.API_BASE_URL || "http://localhost:8091";
 
 const useStorageState =
   (process.env.USE_STORAGE_STATE ?? "false").toLowerCase() === "true";
 
-const browserDefaults = {
-  browserName: "chromium" as const,
-  channel: "chrome",
-  baseURL: uiBaseURL,
-  viewport: { width: 1440, height: 900 },
-  headless: true,
-  trace: "on-first-retry" as const,
-  screenshot: "only-on-failure" as const,
-  video: "retain-on-failure" as const,
-  actionTimeout: 10_000,
-  navigationTimeout: 30_000,
-  ignoreHTTPSErrors: true,
-};
-
 export default defineConfig({
   testDir: "./tests",
+
   timeout: 30_000,
+
   expect: {
     timeout: 7_000,
   },
 
-  fullyParallel: false,
-  forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
-  workers: isCI ? 2 : undefined,
-  maxFailures: isCI ? 10 : undefined,
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined,
 
   outputDir: "test-results",
 
-  reporter: isCI
-    ? [
-        ["list"],
-        ["html", { open: "never", outputFolder: "playwright-report" }],
-        ["junit", { outputFile: "test-results/junit-results.xml" }],
-      ]
-    : [
-        ["list"],
-        ["html", { open: "never", outputFolder: "playwright-report" }],
-      ],
+  reporter: [
+    ["list"],
+    [
+      "html",
+      {
+        outputFolder: "playwright-report",
+        open: "never",
+        title: "Playwright Enterprise Test Execution Report",
+      },
+    ],
+    ["json", { outputFile: "test-results/results.json" }],
+    ["junit", { outputFile: "test-results/results.xml" }],
+  ],
 
-  use: browserDefaults,
+  // Shared settings for all projects
+  use: {
+  trace: "retain-on-failure",
+  screenshot: "only-on-failure",
+  video: "retain-on-failure",
+  actionTimeout: 10_000,
+  navigationTimeout: 15_000,
+},
 
   projects: [
     {
-      name: "setup",
-      testMatch: /.*\.setup\.ts/,
-      timeout: 90_000,
-      use: {
-        ...browserDefaults,
-      },
-    },
-
-    {
       name: "ui-chromium",
-      testMatch: /ui\/.*\.spec\.ts/,
+      testMatch: /tests\/ui\/.*\.spec\.ts/,
       use: {
-        ...browserDefaults,
-        storageState: useStorageState ? GLOBAL.storage.customer : undefined,
+        ...devices["Desktop Chrome"],
+        baseURL: uiBaseURL,
+        extraHTTPHeaders: {
+          Accept: "application/json",
+        },
+        storageState: useStorageState
+          ? "storage/state/customer.json"
+          : undefined,
       },
-      dependencies: useStorageState ? ["setup"] : [],
+      metadata: {
+        testLayer: "ui",
+        browser: "chromium",
+        app: "practice-software-testing",
+        env: envName,
+        apiBaseURL,
+      },
     },
 
     {
       name: "api",
-      testMatch: /api\/.*\.spec\.ts/,
+      testMatch: /tests\/api\/.*\.spec\.ts/,
       use: {
         baseURL: apiBaseURL,
         extraHTTPHeaders: {
           Accept: "application/json",
-          "Content-Type": "application/json",
         },
+      },
+      metadata: {
+        testLayer: "api",
+        env: envName,
+        apiBaseURL,
       },
     },
 
     {
-      name: "hybrid-chromium",
-      testMatch: /hybrid\/.*\.spec\.ts/,
+      name: "hybrid",
+      testMatch: /tests\/hybrid\/.*\.spec\.ts/,
       use: {
-        ...browserDefaults,
-        storageState: useStorageState ? GLOBAL.storage.customer : undefined,
+        ...devices["Desktop Chrome"],
+        baseURL: uiBaseURL,
+        extraHTTPHeaders: {
+          Accept: "application/json",
+        },
+        storageState: useStorageState
+          ? "storage/state/customer.json"
+          : undefined,
       },
-      dependencies: useStorageState ? ["setup"] : [],
+      metadata: {
+        testLayer: "hybrid",
+        browser: "chromium",
+        app: "practice-software-testing",
+        env: envName,
+        apiBaseURL,
+      },
     },
+
+    // Uncomment later when you want multi-browser UI CI
+    // {
+    //   name: "ui-firefox",
+    //   testMatch: /tests\/ui\/.*\.spec\.ts/,
+    //   use: {
+    //     ...devices["Desktop Firefox"],
+    //     baseURL: uiBaseURL,
+    //     extraHTTPHeaders: {
+    //       Accept: "application/json",
+    //     },
+    //     storageState: useStorageState
+    //       ? "storage/state/customer.json"
+    //       : undefined,
+    //   },
+    //   metadata: {
+    //     testLayer: "ui",
+    //     browser: "firefox",
+    //     app: "practice-software-testing",
+    //     env: envName,
+    //     apiBaseURL,
+    //   },
+    // },
+    // {
+    //   name: "ui-webkit",
+    //   testMatch: /tests\/ui\/.*\.spec\.ts/,
+    //   use: {
+    //     ...devices["Desktop Safari"],
+    //     baseURL: uiBaseURL,
+    //     extraHTTPHeaders: {
+    //       Accept: "application/json",
+    //     },
+    //     storageState: useStorageState
+    //       ? "storage/state/customer.json"
+    //       : undefined,
+    //   },
+    //   metadata: {
+    //     testLayer: "ui",
+    //     browser: "webkit",
+    //     app: "practice-software-testing",
+    //     env: envName,
+    //     apiBaseURL,
+    //   },
+    // },
   ],
 });

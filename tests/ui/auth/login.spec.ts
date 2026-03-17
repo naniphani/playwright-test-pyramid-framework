@@ -3,7 +3,7 @@ import { LoginPage } from "../../../src/pages/LoginPage.js";
 
 // Helper copied from existing login-logout test to avoid flakes against
 // the public demo site (Cloudflare sometimes blocks automated traffic).
-async function skipIfCloudflare(page: Page) {
+/*async function skipIfCloudflare(page: Page) {
     const hasTurnstileFrame = await page
         .locator('iframe[src*="challenges.cloudflare.com"]')
         .first()
@@ -13,7 +13,7 @@ async function skipIfCloudflare(page: Page) {
     if (hasTurnstileFrame) {
         test.skip(true, "Cloudflare challenge shown on public demo site.");
     }
-}
+}*/
 
 // A very small smoke scenario that exercises the login page object.
 test("auth: user can login using page object model", async ({ page }) => {
@@ -24,10 +24,10 @@ test("auth: user can login using page object model", async ({ page }) => {
 
     const login = new LoginPage(page);
     await login.openViaHome();
-    await skipIfCloudflare(page);
+    //await skipIfCloudflare(page);
 
     await login.login(email, password);
-    await skipIfCloudflare(page);
+    //await skipIfCloudflare(page);
 
     // after successful login we expect to land on the account page
     await expect(page).toHaveURL(/\/account/);
